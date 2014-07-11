@@ -7,8 +7,8 @@ from inspect import signature
 
 class NiftyClass(object):
     
-    def __init__(self, var):
-        self.var = var
+    def __init__(self):
+        pass
 
     def _private_first(self, arg):
         pass
@@ -41,31 +41,37 @@ class RESTProxy(object):
     
     def _make_arguments(self, request, method):
         sig = inspect.signature(method)
-        sigp = sig.parameters
-        # validate and convert json fields to signature
-        # validate with jsonschema?
+        params = sig.parameters
+        ## validate and convert json fields to signature
+        ## validate with jsonschema?
+        try:
+            j = request.json_body
+        except ValueError:    
+            raise
+        
         return sig.bind(###)
 
     def _wrap_response(self, response):
-        # not implemented
-        pass
+        return json.dumps(response, default=lambda o: o.__dict__)
 
     def _build_routes(self):
         for name, method in self._methods.items:
             
-            def fn(request):
+            def fn(request):    # and what about GET without request?
                 if ba = self._make_arguments(request, method):
-                    return self._wrap_response(method(*ba.args,**ba.kwargs)))
+                    return self._wrap_response(method(*ba.args, **ba.kwargs)))
                 return {} # XXX
             
             if inspect.signature(method).parameters:
+                # should generate JSON schema here?
+                # for each method signature
                 self.srv.add_url('POST', name, fn, True)
             else
                 self.srv.add_url('GET', name, fn, False)
 
 if __name__ == "__main__":
     
-    obj = NiftyClass("rocks!")
+    obj = NiftyClass()
     loop = asyncio.get_event_loop()
     srv = aiorest.RESTServer(hostname='127.0.0.1',loop=loop)
 
