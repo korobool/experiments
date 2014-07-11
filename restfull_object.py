@@ -27,11 +27,11 @@ class NiftyClass(object):
 
 class RESTProxy(object):
     
-    def __init__(self, obj):
+    def __init__(self, obj, srv):
         self.obj = obj
+        self.srv = srv
         self._get_methods()
         self._build_routes()
-
 
     def _get_methods(self):
         self._methods = {method: getattr(self.obj, method) 
@@ -59,10 +59,24 @@ class RESTProxy(object):
                 return {} # XXX
             
             if inspect.signature(method).parameters:
-                self._srv.add_url('POST', name, fn, True)
+                self.srv.add_url('POST', name, fn, True)
             else
-                self._srv.add_url('GET', name, fn, False)
+                self.srv.add_url('GET', name, fn, False)
 
 if __name__ == "__main__":
     
-    o = NiftyClass("rocks!")
+    obj = NiftyClass("rocks!")
+    loop = asyncio.get_event_loop()
+    srv = aiorest.RESTServer(hostname='127.0.0.1',loop=loop)
+
+    proxy = RESTProxy(obj, srv)
+
+    server = loop.run_until_complete(loop.create_server(
+        srv.make_handler, '127.0.0.1', 8080))
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        server.close()
+        loop.run_until_complete(server.wait_closed())
+        loop.close()
