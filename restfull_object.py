@@ -1,12 +1,13 @@
 import asyncio
 import aiorest
 import json
+import jsonschema
 
 from inspect import signature
 
 
 class NiftyClass(object):
-    
+
     def __init__(self):
         pass
 
@@ -25,8 +26,9 @@ class NiftyClass(object):
     def public_fourth(self, **kwargs):
         pass
 
+
 class RESTProxy(object):
-    
+
     def __init__(self, obj, srv):
         self.obj = obj
         self.srv = srv
@@ -34,21 +36,21 @@ class RESTProxy(object):
         self._build_routes()
 
     def _get_methods(self):
-        self._methods = {method: getattr(self.obj, method) 
-                            for method in dir(self.obj)
-                                if callable(getattr(self.obj, method))
-                                    and not method.startswith("_")}
-    
+        self._methods = {method: getattr(self.obj, method)
+                         for method in dir(self.obj)
+                         if callable(getattr(self.obj, method))
+                         and not method.startswith("_")}
+
     def _make_arguments(self, request, method):
         sig = inspect.signature(method)
         params = sig.parameters
-        ## validate and convert json fields to signature
-        ## validate with jsonschema?
+        # validate and convert json fields to signature
+        # validate with jsonschema?
         try:
             j = request.json_body
-        except ValueError:    
+        except ValueError:
             raise
-        
+
         return sig.bind(###)
 
     def _wrap_response(self, response):
@@ -56,10 +58,10 @@ class RESTProxy(object):
 
     def _build_routes(self):
         for name, method in self._methods.items:
-            
+
             def fn(request):    # and what about GET without request?
                 if ba = self._make_arguments(request, method):
-                    return self._wrap_response(method(*ba.args, **ba.kwargs)))
+                    return self._wrap_response(method(*ba.args, **ba.kwargs))
                 return {} # XXX
             
             if inspect.signature(method).parameters:
@@ -70,10 +72,10 @@ class RESTProxy(object):
                 self.srv.add_url('GET', name, fn, False)
 
 if __name__ == "__main__":
-    
+
     obj = NiftyClass()
     loop = asyncio.get_event_loop()
-    srv = aiorest.RESTServer(hostname='127.0.0.1',loop=loop)
+    srv = aiorest.RESTServer(hostname='127.0.0.1', loop=loop)
 
     proxy = RESTProxy(obj, srv)
 
@@ -86,3 +88,4 @@ if __name__ == "__main__":
         server.close()
         loop.run_until_complete(server.wait_closed())
         loop.close()
+
