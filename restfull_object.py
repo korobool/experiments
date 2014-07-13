@@ -4,7 +4,7 @@ import json
 import jsonschema
 
 from inspect import signature
-
+from collections import OrderedDict
 
 class NiftyClass(object):
 
@@ -41,6 +41,19 @@ class RESTProxy(object):
                          if callable(getattr(self.obj, method))
                          and not method.startswith("_")}
 
+    def _build_schema(sig):
+        ord = OrderedDict()
+        for name,param in sig.parameters.items():
+            if (param.kind == param.VAR_KEYWORD):
+                ord.update({name: {"type":"object"}})
+            elif (param.kind == param.VAR_POSITIONAL):
+                ord.update({name: {"type":"array"}})
+            else:
+                ord.update({name: 
+                            {"anyOf":[{"type":"string"},{"type":"number"}]}})
+            return json.loads('{{"type":"object","properties":{}}}'
+                                .format(json.dumps(ord))) 
+
     def _make_arguments(self, request, method):
         sig = inspect.signature(method)
         params = sig.parameters
@@ -48,8 +61,11 @@ class RESTProxy(object):
         # validate with jsonschema?
         try:
             j = request.json_body
+            val for key, val in jo.items() 
+
         except ValueError:
             raise
+
 
         return sig.bind(###)
 
