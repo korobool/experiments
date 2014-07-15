@@ -2,12 +2,15 @@ import asyncio
 import aiorest
 import json
 
-def leadinga(request):
+def leadinga(request, **kwargs):
     try:
         jo = request.json_body
     except ValueError:    
         return {'error': '10'}
-
+    
+    for k in request.args:
+        print("k: " + request.args[k])
+    
     words = [val for key, val in jo.items() if val.startswith('a')]
 
     return json.JSONEncoder().encode({'words':words})
