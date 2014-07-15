@@ -11,7 +11,7 @@ class NiftyClass(object):
         pass
 
     def _private_first(self, arg):
-        return "private_first" 
+        return "private_first"
 
     def public_first(self):
         return "first"
@@ -23,7 +23,8 @@ class NiftyClass(object):
         return "third"
 
     def public_fourth(self, a, b, *args, **kwargs):
-        print("fourth a:{} b:{} *args:{} **kwargs:{}".format(a,b,args,kwargs))
+        print("fourth a:{} b:{} *args:{} **kwargs:{}"
+              .format(a, b, args, kwargs))
         return "fourth"
 
 
@@ -44,36 +45,41 @@ class RESTProxy(object):
 
     def _build_schema(self, sig):
         schema = {}
+        pos = []
         for name, param in sig.parameters.items():
             if (param.kind == param.VAR_KEYWORD):
-                schema.update({name: {}})
+                schema.update({'kwargs': {}})
             elif (param.kind == param.VAR_POSITIONAL):
-                schema.update({name: []})
+                schema.update({'args': []})
             else:
-                schema.update({name: name})
-            return schema
+                pos.append(name)
+
+        schema.update({'pos': pos})
+        return schema
 
     def _make_arguments(self, request, name, sig):
         try:
+            args = []
+            kwargs = {}
             json = request.json_body
             schema = self.schema[name]
 
             if not json.keys() == schema.keys():
                 raise TypeError("Keys doesn't match schema.")
-            for key in json.keys():
-                if not json[key].__class__ == schema[key].__class__:
-                    raise TypeError("Wrong type of argument.")
 
-            args = []
-            kwargs = {}
-            for value in json.values():
-                print("value:{} class: {}".format(value,value.__class__))
-                if isinstance(value, list):
-                    args.extend(value)
-                elif isinstance(value, dict):
-                    kwargs = value
-                else:
-                    args.append(value)
+            for key, value in json.items():
+                if (key == 'args' and not isinstance(value, list)):
+                    raise TypeError("Wrong type for *args.")
+                if (key == 'kwargs' and not isinstance(value, dict)):
+                    raise TypeError("Wrong type for **kwargs.")
+                if (key == 'pos' and not isinstance(value, list)):
+                    raise TypeError("Wrong type for positional.")
+                if (key == 'pos' and not len(value) == len(schema[key])):
+                    raise TypeError("Positional arguments missmatch.")
+
+            args.extend(json['pos'])
+            args.extend(json['args'])
+            kwargs = json['kwargs']
             ba = sig.bind(*args, **kwargs)
 
         except ValueError:
@@ -91,7 +97,7 @@ class RESTProxy(object):
             sig = signature(method)
             self.schema.update({name: self._build_schema(sig)})
 
-            def fn(request, name=name):    # and what about GET without request?
+            def fn(request, name=name):   # and what about GET without request?
                 method = self._methods[name]
                 sig = signature(self._methods[name])
                 ba = self._make_arguments(request, name, sig)
