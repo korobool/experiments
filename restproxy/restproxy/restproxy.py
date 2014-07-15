@@ -5,29 +5,6 @@ import json
 from inspect import signature
 
 
-class NiftyClass(object):
-
-    def __init__(self):
-        pass
-
-    def _private_first(self, arg):
-        return "private_first"
-
-    def public_first(self):
-        return "first"
-
-    def public_second(self, arg):
-        return "second"
-
-    def public_third(self, *args):
-        return "third"
-
-    def public_fourth(self, a, b, *args, **kwargs):
-        print("fourth a:{} b:{} *args:{} **kwargs:{}"
-              .format(a, b, args, kwargs))
-        return "fourth"
-
-
 class RESTProxy(object):
 
     def __init__(self, obj, srv):
@@ -114,21 +91,3 @@ class RESTProxy(object):
             return self._wrap_response(self.schema)
                        
         self.srv.add_url('GET', '/_api', api, False)
-
-if __name__ == "__main__":
-
-    obj = NiftyClass()
-    loop = asyncio.get_event_loop()
-    srv = aiorest.RESTServer(hostname='127.0.0.1', loop=loop)
-
-    proxy = RESTProxy(obj, srv)
-
-    server = loop.run_until_complete(loop.create_server(
-        srv.make_handler, '127.0.0.1', 8080))
-
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        server.close()
-        loop.run_until_complete(server.wait_closed())
-        loop.close()
