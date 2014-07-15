@@ -103,14 +103,17 @@ class RESTProxy(object):
                 ba = self._make_arguments(request, name, sig)
                 if ba:
                     return self._wrap_response(method(*ba.args, **ba.kwargs))
-                return {}       # XXX
+                return {}
 
             if sig.parameters:
-                # should generate JSON schema here?
-                # for each method signature
                 self.srv.add_url('POST', '/' + name, fn, True)
             else:
                 self.srv.add_url('GET', '/' + name, fn, False)
+
+        def api():
+            return self._wrap_response(self.schema)
+                       
+        self.srv.add_url('GET', '/_api', api, False)
 
 if __name__ == "__main__":
 
