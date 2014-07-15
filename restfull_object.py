@@ -1,10 +1,8 @@
 import asyncio
 import aiorest
 import json
-import jsonschema
 
 from inspect import signature
-from collections import OrderedDict
 
 
 class NiftyClass(object):
@@ -45,39 +43,39 @@ class RESTProxy(object):
                          and not method.startswith("_")}
 
     def _build_schema(self, sig):
-        ord = OrderedDict()
+        schema = {}
         for name, param in sig.parameters.items():
             if (param.kind == param.VAR_KEYWORD):
-                ord.update({name: {"type": "object"}})
+                schema.update({name: {}})
             elif (param.kind == param.VAR_POSITIONAL):
-                ord.update({name: {"type": "array"}})
+                schema.update({name: []})
             else:
-                ord.update({name: {"anyOf": [{"type": "string"},
-                                             {"type": "number"}]}})
-            return json.loads('{{"type": "object", "properties": {}}}'
-                              .format(json.dumps(ord)),
-                              object_pairs_hook=OrderedDict)
+                schema.update({name: name})
+            return schema
 
     def _make_arguments(self, request, name, sig):
         try:
-            j = request.json_body
-            jsonschema.validate(j, self.schema[name])
+            json = request.json_body
+            schema = self.schema[name]
+
+            if not json.keys() == schema.keys():
+                raise TypeError("Keys doesn't match schema.")
+            for key in json.keys():
+                if not json[key].__class__ == schema[key].__class__:
+                    raise TypeError("Wrong type of argument.")
+
             args = []
             kwargs = {}
-            for value in j.values():
+            for value in json.values():
                 print("value:{} class: {}".format(value,value.__class__))
                 if isinstance(value, list):
                     args.extend(value)
-                elif isinstance(value, OrderedDict):
-                    kwargs = dict(value)
+                elif isinstance(value, dict):
+                    kwargs = value
                 else:
                     args.append(value)
             ba = sig.bind(*args, **kwargs)
 
-        except jsonschema.ValidationError as e:
-            print(e.message)
-        except jsonschema.SchemaError as e:
-            print(e)
         except ValueError:
             raise
         except TypeError:
