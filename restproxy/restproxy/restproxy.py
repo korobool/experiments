@@ -3,6 +3,7 @@ import aiorest
 import json
 
 from inspect import signature
+from inspect import ismethod
 
 
 class RESTProxy(object):
@@ -17,7 +18,7 @@ class RESTProxy(object):
     def _get_methods(self):
         self._methods = {method: getattr(self.obj, method)
                          for method in dir(self.obj)
-                         if callable(getattr(self.obj, method))
+                         if ismethod(getattr(self.obj, method))
                          and not method.startswith("_")}
 
     def _build_schema(self, sig):
