@@ -58,14 +58,14 @@ class RESTProxy(object):
                 args.extend(jo['pos'])
                 args.extend(jo['args'])
                 kwargs = jo['kwargs']
-            
+ 
             ba = sig.bind(*args, **kwargs)
         except ValueError as e:
             raise aiorest.RESTError(400, "Bad Request", {'msg': str(e)})
         return ba
 
     def _wrap_response(self, response):
-        return {'response':response}
+        return {'response': response}
 
     def _build_routes(self):
         for name, method in self._methods.items():
